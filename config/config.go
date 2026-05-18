@@ -30,7 +30,7 @@ type DatabaseConfig struct {
 
 func Load() *Config {
 	if err := godotenv.Load(); err != nil {
-		log.Println("Warning: no .env file found, reading from environment")
+		log.Println("warning: no .env file found, reading from environment")
 	}
 
 	cfg := &Config{
@@ -76,7 +76,7 @@ func getEnvRequired(key string) string {
 	val, ok := os.LookupEnv(key);
 
 	if !ok || val == "" {
-		log.Fatalf("Error: required environment variable %q is not set", key)
+		log.Fatalf("error: required environment variable %q is not set", key)
 	}
 
 	return val
