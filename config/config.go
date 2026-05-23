@@ -18,14 +18,30 @@ type AppConfig struct {
 	Port string
 }
 
+func (a AppConfig) Addr() string {
+	return ":" + a.Port
+}
+
 type DatabaseConfig struct {
+	Driver string
 	Host string
 	Port string
 	User string
 	Password string
 	Name string
 	SSLMode string
-	URL string
+}
+
+func (d DatabaseConfig) DSN() string {
+	return fmt.Sprintf("%s://%s:%s@%s:%s/%s?sslmode=%s",
+		d.Driver,
+		d.User, 
+		d.Password, 
+		d.Host, 
+		d.Port, 
+		d.Name, 
+		d.SSLMode,
+	)
 }
 
 func Load() *Config {
@@ -33,38 +49,24 @@ func Load() *Config {
 		log.Println("warning: no .env file found, reading from environment")
 	}
 
-	cfg := &Config{
+	return &Config{
 		App: AppConfig{
-			Env: getEnv("APP_ENV", "development"),
-			Port: getEnv("APP_PORT", "3001"),
+			Env: getEnvWithDefault("APP_ENV", "development"),
+			Port: getEnvWithDefault("APP_PORT", "3001"),
 		},
 		Database: DatabaseConfig{
-			Host: getEnvRequired("DB_HOST"),
-			Port: getEnv("DB_PORT", "5432"),
-			User: getEnvRequired("DB_USER"),
-			Password: getEnvRequired("DB_PASSWORD"),
-			Name: getEnvRequired("DB_NAME"),
-			SSLMode: getEnv("DB_SSLMODE", "disable"),
+			Driver: getEnvWithDefault("DB_DRIVER", "postgres"),
+			Host: getEnvWithDefaultRequired("DB_HOST"),
+			Port: getEnvWithDefault("DB_PORT", "5432"),
+			User: getEnvWithDefaultRequired("DB_USER"),
+			Password: getEnvWithDefaultRequired("DB_PASSWORD"),
+			Name: getEnvWithDefaultRequired("DB_NAME"),
+			SSLMode: getEnvWithDefault("DB_SSLMODE", "disable"),
 		},
 	}
-
-	cfg.Database.URL = buildDSN(cfg.Database)
-
-	return cfg
 }
 
-func buildDSN(dbConfig DatabaseConfig) string {
-	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-		dbConfig.User, 
-		dbConfig.Password, 
-		dbConfig.Host, 
-		dbConfig.Port, 
-		dbConfig.Name, 
-		dbConfig.SSLMode,
-	)
-}
-
-func getEnv(key, fallback string) string {
+func getEnvWithDefault(key, fallback string) string {
 	if val, ok := os.LookupEnv(key); ok {
 		return val
 	}
@@ -72,7 +74,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func getEnvRequired(key string) string {
+func getEnvWithDefaultRequired(key string) string {
 	val, ok := os.LookupEnv(key);
 
 	if !ok || val == "" {

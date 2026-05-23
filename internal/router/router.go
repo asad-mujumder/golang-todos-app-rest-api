@@ -1,10 +1,15 @@
 package router
 
 import (
+	"github.com/asad-mujumder/golang-todos-app-rest-api/internal/handler"
 	"github.com/gin-gonic/gin"
 )
 
-func Setup() *gin.Engine {
+type Handlers struct {
+	Todo *handler.TodoHandler
+}
+
+func Setup(handlers *Handlers) *gin.Engine {
 	router := gin.Default()
 	router.SetTrustedProxies(nil)
 
@@ -15,6 +20,8 @@ func Setup() *gin.Engine {
 			"Message": "API is working",
 		})
 	})
+
+	registerTodoRoutes(router, handlers.Todo)
 
 	return router
 }

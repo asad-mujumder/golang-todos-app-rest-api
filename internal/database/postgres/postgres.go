@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/asad-mujumder/golang-todos-app-rest-api/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -17,8 +18,8 @@ const (
 	defaultConnectTimeout    = 5 * time.Second
 )
 
-func NewPool(databaseURL string) (*pgxpool.Pool, error) {
-	poolConfig, err := pgxpool.ParseConfig(databaseURL)
+func NewPool(ctx context.Context, dbConfig config.DatabaseConfig) (*pgxpool.Pool, error) {
+	poolConfig, err := pgxpool.ParseConfig(dbConfig.DSN())
 
 	if err != nil {
 		return nil, fmt.Errorf("postgres: parse config: %w", err)
@@ -31,13 +32,13 @@ func NewPool(databaseURL string) (*pgxpool.Pool, error) {
 	poolConfig.HealthCheckPeriod = defaultHealthCheckPeriod
 	poolConfig.ConnConfig.ConnectTimeout = defaultConnectTimeout
 
-	pool, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
+	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 
 	if err != nil {
 		return nil, fmt.Errorf("postgres: create pool: %w", err)
 	}
 
-	if err := ping(pool); err != nil {
+	if err := ping(ctx, pool); err != nil {
 		pool.Close()
 		return nil, err
 	}
@@ -45,9 +46,8 @@ func NewPool(databaseURL string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func ping(pool *pgxpool.Pool) error {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultConnectTimeout)
-
+func ping(ctx context.Context, pool *pgxpool.Pool) error {
+	ctx, cancel := context.WithTimeout(ctx, defaultConnectTimeout)
 	defer cancel()
 
 	if err := pool.Ping(ctx); err != nil {
