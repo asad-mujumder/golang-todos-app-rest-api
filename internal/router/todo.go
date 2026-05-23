@@ -9,6 +9,7 @@ func registerTodoRoutes(r *gin.Engine, h *handler.TodoHandler) {
 	todos := r.Group("/todos")
 
 	{
+		todos.GET("", h.List)
 		todos.POST("", h.Create)
 	}
 }

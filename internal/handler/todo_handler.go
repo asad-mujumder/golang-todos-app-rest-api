@@ -21,6 +21,34 @@ func NewTodoHandler(service *service.TodoService, log zerolog.Logger) *TodoHandl
 	}
 }
 
+func (h *TodoHandler) List(c *gin.Context) {
+	var req model.ListTodosRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		h.log.Warn().Err(err).Msg("invalid query params")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": false,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	response, err := h.service.List(c.Request.Context(), &req)
+	if err != nil {
+		h.log.Error().Err(err).Msg("failed to list todos")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error": "internal server error",
+		})
+		return
+	}
+
+	h.log.Info().Str("", "").Msg("")
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": response,
+	})
+}
+
 func (h *TodoHandler) Create(c *gin.Context) {
 	var newTodo model.CreateTodoRequest
 	if err := c.ShouldBindJSON(&newTodo); err != nil {
