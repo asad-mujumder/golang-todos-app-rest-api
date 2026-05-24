@@ -31,6 +31,7 @@ type ListTodosResponse struct {
 	Limit int `json:"limit"`
 }
 
-type GetTodoRequest struct {
-	ID string `uri:"id" binding:"required,uuid"`
+type UpdateTodoRequest struct {
+	Title *string `json:"title" binding:"omitempty,min=1,max=255"`
+	Completed *bool `json:"completed" binding:"omitempty"`
 }

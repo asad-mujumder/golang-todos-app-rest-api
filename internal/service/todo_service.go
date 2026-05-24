@@ -6,6 +6,7 @@ import (
 
 	"github.com/asad-mujumder/golang-todos-app-rest-api/internal/model"
 	"github.com/asad-mujumder/golang-todos-app-rest-api/internal/repository"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 )
 
@@ -62,12 +63,32 @@ func (s *TodoService) Create(ctx context.Context, newTodo *model.CreateTodoReque
 	return  todo, nil
 }
 
-func (s *TodoService) Get(ctx context.Context, req *model.GetTodoRequest) (*model.Todo, error) {
-	todo, err := s.repo.Get(ctx, req.ID)
+func (s *TodoService) Get(ctx context.Context, id uuid.UUID) (*model.Todo, error) {
+	todo, err := s.repo.Get(ctx, id)
 
 	if err != nil {
 		return nil, fmt.Errorf("todo service: get: %w", err)
 	}
 
 	return todo, nil
+}
+
+func (s *TodoService) Update(ctx context.Context, id uuid.UUID, req *model.UpdateTodoRequest) (*model.Todo, error) {
+	todo, err := s.repo.Update(ctx, id, req.Title, req.Completed)
+
+	if err != nil {
+		return nil, fmt.Errorf("todo service: update: %w", err)
+	}
+
+	return todo, nil
+}
+
+func (s *TodoService) Delete(ctx context.Context, id uuid.UUID) (*uuid.UUID, error) {
+	deletedID, err := s.repo.Delete(ctx, id)
+
+	if err != nil {
+		return nil, fmt.Errorf("todo service: delete: %w", err)
+	}
+
+	return deletedID, nil
 }

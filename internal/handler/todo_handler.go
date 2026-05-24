@@ -6,6 +6,7 @@ import (
 	"github.com/asad-mujumder/golang-todos-app-rest-api/internal/model"
 	"github.com/asad-mujumder/golang-todos-app-rest-api/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 )
 
@@ -80,17 +81,19 @@ func (h *TodoHandler) Create(c *gin.Context) {
 }
 
 func (h *TodoHandler) Get(c *gin.Context) {
-	var req model.GetTodoRequest
+	id := c.Param("id")
 
-	if err := c.ShouldBindUri(&req); err != nil {
-		h.log.Warn().Err(err).Msg("invalid path")
+	parsedID, err := uuid.Parse(id)
+
+	if err != nil {
+		h.log.Warn().Err(err).Msg("invalid id")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"error": err.Error(),
 		})
 	}
 
-	todo, err := h.service.Get(c.Request.Context(), &req)
+	todo, err := h.service.Get(c.Request.Context(), parsedID)
 	if err != nil {
 		h.log.Error().Err(err).Msg("internal server error")
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -104,6 +107,86 @@ func (h *TodoHandler) Get(c *gin.Context) {
 		"success": true,
 		"data": gin.H{
 			"todo": todo,
+		},
+	})
+}
+
+func (h *TodoHandler) Update(c *gin.Context) {
+	id := c.Param("id")
+
+	parsedID, err := uuid.Parse(id)
+
+	if err != nil {
+		h.log.Warn().Err(err).Msg("invalid id")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	var req model.UpdateTodoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Warn().Err(err).Msg("invalid request body")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	todo, err := h.service.Update(c.Request.Context(), parsedID, &req)
+
+	if err != nil {
+		h.log.Error().Err(err).Msg("internal server error")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error": "internal server error",
+		})
+		return
+	}
+
+	h.log.Info().Str("todo_id", todo.ID.String()).Msg("Updated todo with id as \"todo_id\"")
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": gin.H{
+			"todo": todo,
+		},
+	})
+}
+
+
+
+func (h *TodoHandler) Delete(c *gin.Context) {
+	id := c.Param("id")
+
+	parsedID, err := uuid.Parse(id)
+
+	if err != nil {
+		h.log.Warn().Err(err).Msg("invalid id")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	deletedID, err := h.service.Delete(c.Request.Context(), parsedID)
+
+	if err != nil {
+		h.log.Error().Err(err).Msg("internal server error")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error": "internal server error",
+		})
+		return
+	}
+
+	h.log.Info().Str("todo_id", deletedID.String()).Msg("Deleted todo with id as \"todo_id\"")
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": gin.H{
+			"id": deletedID,
 		},
 	})
 }
