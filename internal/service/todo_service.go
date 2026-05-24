@@ -61,3 +61,13 @@ func (s *TodoService) Create(ctx context.Context, newTodo *model.CreateTodoReque
 
 	return  todo, nil
 }
+
+func (s *TodoService) Get(ctx context.Context, req *model.GetTodoRequest) (*model.Todo, error) {
+	todo, err := s.repo.Get(ctx, req.ID)
+
+	if err != nil {
+		return nil, fmt.Errorf("todo service: get: %w", err)
+	}
+
+	return todo, nil
+}

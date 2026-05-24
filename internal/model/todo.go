@@ -30,3 +30,7 @@ type ListTodosResponse struct {
 	Page int `json:"page"`
 	Limit int `json:"limit"`
 }
+
+type GetTodoRequest struct {
+	ID string `uri:"id" binding:"required,uuid"`
+}

@@ -97,3 +97,28 @@ func (r *TodoRepository) Create(reqContext context.Context, title string, comple
 
 	return &todo, nil
 }
+
+func (r *TodoRepository) Get(reqContext context.Context, id string) (*model.Todo, error) {
+	ctx, cancel := context.WithTimeout(reqContext, queryTimout)
+	defer cancel()
+	const query = `
+	SELECT "id", "title", "completed", "created_at", "updated_at"
+	FROM "todos"
+	WHERE "id" = $1
+	`
+	r.log.Info().Msg("executing get by ID query")
+	var todo model.Todo
+	err := r.pool.QueryRow(ctx, query, id).Scan(
+		&todo.ID,
+		&todo.Title,
+		&todo.Completed,
+		&todo.CreatedAt,
+		&todo.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("todo repository: get: %w", err)
+	}
+
+	return &todo, nil
+}

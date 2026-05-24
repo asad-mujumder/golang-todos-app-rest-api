@@ -11,5 +11,6 @@ func registerTodoRoutes(r *gin.Engine, h *handler.TodoHandler) {
 	{
 		todos.GET("", h.List)
 		todos.POST("", h.Create)
+		todos.GET("/:id", h.Get)
 	}
 }

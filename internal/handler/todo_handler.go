@@ -42,7 +42,7 @@ func (h *TodoHandler) List(c *gin.Context) {
 		return
 	}
 
-	h.log.Info().Str("", "").Msg("")
+	h.log.Info().Str("user_id", "demo").Msg("Todos of the user with id as \"user_id\"")
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": response,
@@ -73,6 +73,35 @@ func (h *TodoHandler) Create(c *gin.Context) {
 	h.log.Info().Str("todo_id", todo.ID.String()).Msg("New todo created successfully")
 	c.JSON(http.StatusCreated, gin.H{
 		"status": true,
+		"data": gin.H{
+			"todo": todo,
+		},
+	})
+}
+
+func (h *TodoHandler) Get(c *gin.Context) {
+	var req model.GetTodoRequest
+
+	if err := c.ShouldBindUri(&req); err != nil {
+		h.log.Warn().Err(err).Msg("invalid path")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error": err.Error(),
+		})
+	}
+
+	todo, err := h.service.Get(c.Request.Context(), &req)
+	if err != nil {
+		h.log.Error().Err(err).Msg("internal server error")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error": "internal server error",
+		})
+	}
+
+	h.log.Info().Str("todo_id", todo.ID.String()).Msg("Todo with id as \"todo_id\"")
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
 		"data": gin.H{
 			"todo": todo,
 		},
