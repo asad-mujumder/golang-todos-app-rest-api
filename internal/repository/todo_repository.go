@@ -2,10 +2,12 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/asad-mujumder/golang-todos-app-rest-api/internal/model"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 )
@@ -119,6 +121,9 @@ func (r *TodoRepository) Get(reqContext context.Context, id uuid.UUID) (*model.T
 	)
 
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
 		return nil, fmt.Errorf("todo repository: get: %w", err)
 	}
 
@@ -150,6 +155,9 @@ func (r *TodoRepository) Update(reqContext context.Context, id uuid.UUID, title 
 	)
 
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
 		return nil, fmt.Errorf("todo repository: update: %w", err)
 	}
 
@@ -175,6 +183,9 @@ func (r *TodoRepository) Delete(reqContext context.Context, id uuid.UUID) (*uuid
 	)
 
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
 		return nil, fmt.Errorf("todo repository: delete: %w", err)
 	}
 

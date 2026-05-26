@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/asad-mujumder/golang-todos-app-rest-api/internal/model"
+	"github.com/asad-mujumder/golang-todos-app-rest-api/internal/repository"
 	"github.com/asad-mujumder/golang-todos-app-rest-api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -91,15 +93,24 @@ func (h *TodoHandler) Get(c *gin.Context) {
 			"success": false,
 			"error": err.Error(),
 		})
+		return
 	}
 
 	todo, err := h.service.Get(c.Request.Context(), parsedID)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"error": "todo not found",
+			})
+			return
+		}
 		h.log.Error().Err(err).Msg("internal server error")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"error": "internal server error",
 		})
+		return
 	}
 
 	h.log.Info().Str("todo_id", todo.ID.String()).Msg("Todo with id as \"todo_id\"")
@@ -138,6 +149,13 @@ func (h *TodoHandler) Update(c *gin.Context) {
 	todo, err := h.service.Update(c.Request.Context(), parsedID, &req)
 
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"error": "todo not found",
+			})
+			return
+		}
 		h.log.Error().Err(err).Msg("internal server error")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -174,6 +192,13 @@ func (h *TodoHandler) Delete(c *gin.Context) {
 	deletedID, err := h.service.Delete(c.Request.Context(), parsedID)
 
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"error": "todo not found",
+			})
+			return
+		}
 		h.log.Error().Err(err).Msg("internal server error")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
