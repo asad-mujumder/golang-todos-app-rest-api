@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -11,6 +12,7 @@ import (
 type Config struct {
 	App AppConfig
 	Database DatabaseConfig
+	JWT JWTConfig
 }
 
 type AppConfig struct {
@@ -44,6 +46,11 @@ func (d DatabaseConfig) DSN() string {
 	)
 }
 
+type JWTConfig struct {
+	AccessTokenSecret string
+	AccessTokenTTL time.Duration
+}
+
 func Load() *Config {
 	if err := godotenv.Load(); err != nil {
 		log.Println("warning: no .env file found, reading from environment")
@@ -56,12 +63,16 @@ func Load() *Config {
 		},
 		Database: DatabaseConfig{
 			Driver: getEnvWithDefault("DB_DRIVER", "postgres"),
-			Host: getEnvWithDefaultRequired("DB_HOST"),
+			Host: getEnvRequired("DB_HOST"),
 			Port: getEnvWithDefault("DB_PORT", "5432"),
-			User: getEnvWithDefaultRequired("DB_USER"),
-			Password: getEnvWithDefaultRequired("DB_PASSWORD"),
-			Name: getEnvWithDefaultRequired("DB_NAME"),
+			User: getEnvRequired("DB_USER"),
+			Password: getEnvRequired("DB_PASSWORD"),
+			Name: getEnvRequired("DB_NAME"),
 			SSLMode: getEnvWithDefault("DB_SSLMODE", "disable"),
+		},
+		JWT: JWTConfig{
+			AccessTokenSecret: getEnvRequired("ACCESS_TOKEN_SECRET"),
+			AccessTokenTTL: 15 * time.Minute,
 		},
 	}
 }
@@ -74,7 +85,7 @@ func getEnvWithDefault(key, fallback string) string {
 	return fallback
 }
 
-func getEnvWithDefaultRequired(key string) string {
+func getEnvRequired(key string) string {
 	val, ok := os.LookupEnv(key);
 
 	if !ok || val == "" {

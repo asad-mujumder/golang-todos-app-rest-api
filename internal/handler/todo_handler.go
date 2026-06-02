@@ -29,8 +29,8 @@ func (h *TodoHandler) List(c *gin.Context) {
 	if err := c.ShouldBindQuery(&req); err != nil {
 		h.log.Warn().Err(err).Msg("invalid query params")
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status": false,
-			"error": err.Error(),
+			"success": false,
+			"error": "invalid query params",
 		})
 		return
 	}
@@ -48,6 +48,7 @@ func (h *TodoHandler) List(c *gin.Context) {
 	h.log.Info().Str("user_id", "demo").Msg("Todos of the user with id as \"user_id\"")
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
+		"message": "all todos",
 		"data": response,
 	})
 }
@@ -57,8 +58,8 @@ func (h *TodoHandler) Create(c *gin.Context) {
 	if err := c.ShouldBindJSON(&newTodo); err != nil {
 		h.log.Warn().Err(err).Msg("invalid request body")
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status": false,
-			"error": err.Error(),
+			"success": false,
+			"error": "invalid request body",
 		})
 		return
 	}
@@ -67,7 +68,7 @@ func (h *TodoHandler) Create(c *gin.Context) {
 	if err != nil {
 		h.log.Error().Err(err).Msg("failed to create todo")
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status": false,
+			"success": false,
 			"error": "internal server error",
 		})
 		return
@@ -75,7 +76,8 @@ func (h *TodoHandler) Create(c *gin.Context) {
 
 	h.log.Info().Str("todo_id", todo.ID.String()).Msg("New todo created successfully")
 	c.JSON(http.StatusCreated, gin.H{
-		"status": true,
+		"success": true,
+		"message": "new todo created successfully",
 		"data": gin.H{
 			"todo": todo,
 		},
@@ -91,7 +93,7 @@ func (h *TodoHandler) Get(c *gin.Context) {
 		h.log.Warn().Err(err).Msg("invalid id")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"error": err.Error(),
+			"error": "invalid id",
 		})
 		return
 	}
@@ -116,6 +118,7 @@ func (h *TodoHandler) Get(c *gin.Context) {
 	h.log.Info().Str("todo_id", todo.ID.String()).Msg("Todo with id as \"todo_id\"")
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
+		"message": "todo with id " + todo.ID.String(),
 		"data": gin.H{
 			"todo": todo,
 		},
@@ -131,7 +134,7 @@ func (h *TodoHandler) Update(c *gin.Context) {
 		h.log.Warn().Err(err).Msg("invalid id")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"error": err.Error(),
+			"error": "invalid id",
 		})
 		return
 	}
@@ -141,7 +144,7 @@ func (h *TodoHandler) Update(c *gin.Context) {
 		h.log.Warn().Err(err).Msg("invalid request body")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"error": err.Error(),
+			"error": "invalid request body",
 		})
 		return
 	}
@@ -167,6 +170,7 @@ func (h *TodoHandler) Update(c *gin.Context) {
 	h.log.Info().Str("todo_id", todo.ID.String()).Msg("Updated todo with id as \"todo_id\"")
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
+		"message": "updated todo with id " + todo.ID.String(),
 		"data": gin.H{
 			"todo": todo,
 		},
@@ -184,7 +188,7 @@ func (h *TodoHandler) Delete(c *gin.Context) {
 		h.log.Warn().Err(err).Msg("invalid id")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"error": err.Error(),
+			"error": "invalid id",
 		})
 		return
 	}
@@ -210,6 +214,7 @@ func (h *TodoHandler) Delete(c *gin.Context) {
 	h.log.Info().Str("todo_id", deletedID.String()).Msg("Deleted todo with id as \"todo_id\"")
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
+		"message": "deleted todo with id " + deletedID.String(),
 		"data": gin.H{
 			"id": deletedID,
 		},
