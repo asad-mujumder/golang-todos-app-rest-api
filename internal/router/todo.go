@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func registerTodoRoutes(r *gin.Engine, h *handler.TodoHandler) {
+func registerTodoRoutes(r gin.IRouter, h *handler.TodoHandler) {
 	todos := r.Group("/todos")
 
 	{
