@@ -48,7 +48,7 @@ func (h *TodoHandler) List(c *gin.Context) {
 		return
 	}
 
-	h.log.Info().Str("user_id", "demo").Msg("Todos of the user with id as \"user_id\"")
+	h.log.Info().Str("user_id", userID.String()).Msg("Todos of the user with id as \"user_id\"")
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "all todos",

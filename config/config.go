@@ -72,7 +72,7 @@ func Load() *Config {
 		},
 		JWT: JWTConfig{
 			AccessTokenSecret: getEnvRequired("ACCESS_TOKEN_SECRET"),
-			AccessTokenTTL: 15 * time.Minute,
+			AccessTokenTTL: 24 * time.Hour, // 15 * time.Minute
 		},
 	}
 }
