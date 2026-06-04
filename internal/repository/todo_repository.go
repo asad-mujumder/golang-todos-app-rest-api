@@ -24,27 +24,28 @@ func NewTodoRepository(pool *pgxpool.Pool, log zerolog.Logger) *TodoRepository {
 	}
 }
 
-func (r *TodoRepository) List(reqContext context.Context, limit, offset int) ([]*model.Todo, int, error) {
+func (r *TodoRepository) List(reqContext context.Context, userID uuid.UUID, limit, offset int) ([]*model.Todo, int, error) {
 	ctx, cancel := context.WithTimeout(reqContext, queryTimout)
 	defer cancel()
 
-	const countQuery = `SELECT COUNT(*) FROM "todos";`
+	const countQuery = `SELECT COUNT(*) FROM "todos" WHERE "user_id" = $1;`
 
 	r.log.Info().Msg("executing count query")
 	var total int;
-	if err := r.pool.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+	if err := r.pool.QueryRow(ctx, countQuery, userID).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("todo repository: list: count: %w", err)
 	}
 
 	const query = `
 	SELECT "id", "title", "completed", "created_at", "updated_at"
 	FROM "todos"
+	WHERE "user_id" = $1
 	ORDER BY "created_at" DESC 
-	LIMIT $1 OFFSET $2;
+	LIMIT $2 OFFSET $3;
 	`
 
 	r.log.Info().Msg("executing get all query")
-	rows, err := r.pool.Query(ctx, query, limit, offset)
+	rows, err := r.pool.Query(ctx, query, userID, limit, offset)
 
 	if err != nil {
 		return nil, 0, fmt.Errorf("todo repository: list: %w", err)
@@ -73,20 +74,19 @@ func (r *TodoRepository) List(reqContext context.Context, limit, offset int) ([]
 	return todos, total, nil
 }
 
-func (r *TodoRepository) Create(reqContext context.Context, title string, completed bool) (*model.Todo, error) {
+func (r *TodoRepository) Create(reqContext context.Context, userID uuid.UUID, title string, completed bool) (*model.Todo, error) {
 	ctx, cancel := context.WithTimeout(reqContext, queryTimout)
 	defer cancel()
 
 	const query = `
-	INSERT INTO "todos" ("title", "completed")
-	VALUES ($1, $2)
+	INSERT INTO "todos" ("title", "completed", "user_id")
+	VALUES ($1, $2, $3)
 	RETURNING "id", "title", "completed", "created_at", "updated_at";
 	`
 
 	r.log.Info().Msg("executing insert query")
-	
 	var todo model.Todo
-	err := r.pool.QueryRow(ctx, query, title, completed).Scan(
+	err := r.pool.QueryRow(ctx, query, title, completed, userID).Scan(
 		&todo.ID,
 		&todo.Title,
 		&todo.Completed,
@@ -101,18 +101,18 @@ func (r *TodoRepository) Create(reqContext context.Context, title string, comple
 	return &todo, nil
 }
 
-func (r *TodoRepository) Get(reqContext context.Context, id uuid.UUID) (*model.Todo, error) {
+func (r *TodoRepository) Get(reqContext context.Context, userID, id uuid.UUID) (*model.Todo, error) {
 	ctx, cancel := context.WithTimeout(reqContext, queryTimout)
 	defer cancel()
 	const query = `
 	SELECT "id", "title", "completed", "created_at", "updated_at"
 	FROM "todos"
-	WHERE "id" = $1;
+	WHERE "id" = $1 AND "user_id" = $2;
 	`
 
 	r.log.Info().Msg("executing get by ID query")
 	var todo model.Todo
-	err := r.pool.QueryRow(ctx, query, id).Scan(
+	err := r.pool.QueryRow(ctx, query, id, userID).Scan(
 		&todo.ID,
 		&todo.Title,
 		&todo.Completed,
@@ -130,7 +130,7 @@ func (r *TodoRepository) Get(reqContext context.Context, id uuid.UUID) (*model.T
 	return &todo, nil
 }
 
-func (r *TodoRepository) Update(reqContext context.Context, id uuid.UUID, title *string, completed *bool) (*model.Todo, error) {
+func (r *TodoRepository) Update(reqContext context.Context, userID, id uuid.UUID, title *string, completed *bool) (*model.Todo, error) {
 	ctx, cancel := context.WithTimeout(reqContext, queryTimout)
 	defer cancel()
 
@@ -140,13 +140,13 @@ func (r *TodoRepository) Update(reqContext context.Context, id uuid.UUID, title 
 			title = COALESCE($1, "title"),
 			completed = COALESCE($2, "completed"),
 			updated_at = NOW()
-		WHERE "id" = $3
+		WHERE "id" = $3 AND "user_id" = $4
 		RETURNING "id", "title", "completed", "created_at", "updated_at";
 	`
 
 	r.log.Info().Msg("executing update query")
 	var todo model.Todo
-	err := r.pool.QueryRow(ctx, query, title, completed, id).Scan(
+	err := r.pool.QueryRow(ctx, query, title, completed, id, userID).Scan(
 		&todo.ID,
 		&todo.Title,
 		&todo.Completed,
@@ -166,19 +166,19 @@ func (r *TodoRepository) Update(reqContext context.Context, id uuid.UUID, title 
 
 
 
-func (r *TodoRepository) Delete(reqContext context.Context, id uuid.UUID) (*uuid.UUID, error) {
+func (r *TodoRepository) Delete(reqContext context.Context, userID, id uuid.UUID) (*uuid.UUID, error) {
 	ctx, cancel := context.WithTimeout(reqContext, queryTimout)
 	defer cancel()
 
 	const query = `
 		DELETE FROM "todos"
-		WHERE "id" = $1
+		WHERE "id" = $1 AND "user_id" = $2
 		RETURNING "id";
 	`
 
 	r.log.Info().Msg("executing delete query")
 	var deletedID uuid.UUID
-	err := r.pool.QueryRow(ctx, query, id).Scan(
+	err := r.pool.QueryRow(ctx, query, id, userID).Scan(
 		&deletedID,
 	)
 

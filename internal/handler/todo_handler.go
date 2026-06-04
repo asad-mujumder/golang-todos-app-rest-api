@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/asad-mujumder/golang-todos-app-rest-api/internal/middleware"
 	"github.com/asad-mujumder/golang-todos-app-rest-api/internal/model"
 	"github.com/asad-mujumder/golang-todos-app-rest-api/internal/repository"
 	"github.com/asad-mujumder/golang-todos-app-rest-api/internal/service"
@@ -25,6 +26,8 @@ func NewTodoHandler(service *service.TodoService, log zerolog.Logger) *TodoHandl
 }
 
 func (h *TodoHandler) List(c *gin.Context) {
+	userID := c.MustGet(middleware.UserIDKey).(uuid.UUID)
+
 	var req model.ListTodosRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		h.log.Warn().Err(err).Msg("invalid query params")
@@ -35,7 +38,7 @@ func (h *TodoHandler) List(c *gin.Context) {
 		return
 	}
 
-	response, err := h.service.List(c.Request.Context(), &req)
+	response, err := h.service.List(c.Request.Context(), userID, &req)
 	if err != nil {
 		h.log.Error().Err(err).Msg("failed to list todos")
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -54,6 +57,8 @@ func (h *TodoHandler) List(c *gin.Context) {
 }
 
 func (h *TodoHandler) Create(c *gin.Context) {
+	userID := c.MustGet(middleware.UserIDKey).(uuid.UUID)
+
 	var newTodo model.CreateTodoRequest
 	if err := c.ShouldBindJSON(&newTodo); err != nil {
 		h.log.Warn().Err(err).Msg("invalid request body")
@@ -64,7 +69,7 @@ func (h *TodoHandler) Create(c *gin.Context) {
 		return
 	}
 
-	todo, err := h.service.Create(c.Request.Context(), &newTodo)
+	todo, err := h.service.Create(c.Request.Context(), userID, &newTodo)
 	if err != nil {
 		h.log.Error().Err(err).Msg("failed to create todo")
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -77,7 +82,7 @@ func (h *TodoHandler) Create(c *gin.Context) {
 	h.log.Info().Str("todo_id", todo.ID.String()).Msg("New todo created successfully")
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
-		"message": "new todo created successfully",
+		"message": "todo created successfully",
 		"data": gin.H{
 			"todo": todo,
 		},
@@ -85,8 +90,9 @@ func (h *TodoHandler) Create(c *gin.Context) {
 }
 
 func (h *TodoHandler) Get(c *gin.Context) {
-	id := c.Param("id")
+	userID := c.MustGet(middleware.UserIDKey).(uuid.UUID)
 
+	id := c.Param("id")
 	parsedID, err := uuid.Parse(id)
 
 	if err != nil {
@@ -98,7 +104,7 @@ func (h *TodoHandler) Get(c *gin.Context) {
 		return
 	}
 
-	todo, err := h.service.Get(c.Request.Context(), parsedID)
+	todo, err := h.service.Get(c.Request.Context(), userID, parsedID)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -118,7 +124,7 @@ func (h *TodoHandler) Get(c *gin.Context) {
 	h.log.Info().Str("todo_id", todo.ID.String()).Msg("Todo with id as \"todo_id\"")
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "todo with id " + todo.ID.String(),
+		"message": "todo fetched successfully",
 		"data": gin.H{
 			"todo": todo,
 		},
@@ -126,8 +132,9 @@ func (h *TodoHandler) Get(c *gin.Context) {
 }
 
 func (h *TodoHandler) Update(c *gin.Context) {
-	id := c.Param("id")
+	userID := c.MustGet(middleware.UserIDKey).(uuid.UUID)
 
+	id := c.Param("id")
 	parsedID, err := uuid.Parse(id)
 
 	if err != nil {
@@ -149,7 +156,7 @@ func (h *TodoHandler) Update(c *gin.Context) {
 		return
 	}
 
-	todo, err := h.service.Update(c.Request.Context(), parsedID, &req)
+	todo, err := h.service.Update(c.Request.Context(), userID, parsedID, &req)
 
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
@@ -170,7 +177,7 @@ func (h *TodoHandler) Update(c *gin.Context) {
 	h.log.Info().Str("todo_id", todo.ID.String()).Msg("Updated todo with id as \"todo_id\"")
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "updated todo with id " + todo.ID.String(),
+		"message": "todo updated successfully",
 		"data": gin.H{
 			"todo": todo,
 		},
@@ -180,8 +187,9 @@ func (h *TodoHandler) Update(c *gin.Context) {
 
 
 func (h *TodoHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
+	userID := c.MustGet(middleware.UserIDKey).(uuid.UUID)
 
+	id := c.Param("id")
 	parsedID, err := uuid.Parse(id)
 
 	if err != nil {
@@ -193,7 +201,7 @@ func (h *TodoHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	deletedID, err := h.service.Delete(c.Request.Context(), parsedID)
+	deletedID, err := h.service.Delete(c.Request.Context(), userID, parsedID)
 
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
@@ -214,7 +222,7 @@ func (h *TodoHandler) Delete(c *gin.Context) {
 	h.log.Info().Str("todo_id", deletedID.String()).Msg("Deleted todo with id as \"todo_id\"")
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "deleted todo with id " + deletedID.String(),
+		"message": "todo deleted successfully",
 		"data": gin.H{
 			"id": deletedID,
 		},

@@ -34,6 +34,7 @@ func (r *AuthRepository) Create(reqContext context.Context, req *model.RegisterR
 		RETURNING "id";
 	`
 
+	r.log.Info().Msg("executing insert query")
 	var newUserID string
 	err := r.pool.QueryRow(ctx, query, req.FirstName, req.LastName, req.Email, hashedPassword).Scan(&newUserID)
 
@@ -58,6 +59,7 @@ func (r *AuthRepository) GetByEmail(reqContext context.Context, email string) (*
 		WHERE "email" = $1;
 	`
 
+	r.log.Info().Msg("executing get by email query")
 	var user model.User
 	err := r.pool.QueryRow(ctx, query, email).Scan(
 		&user.ID,
