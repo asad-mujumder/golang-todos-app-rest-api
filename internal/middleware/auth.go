@@ -34,6 +34,11 @@ func Auth(jwtManager *jwt.Manager, log zerolog.Logger) gin.HandlerFunc {
             c.Abort()
             return
         }
+
+        if newToken, err := jwtManager.Generate(claims.UserID); err == nil {
+            log.Info().Msg(newToken)
+            c.Header("X-NEW-ACCESS-TOKEN", newToken)
+        }
             
         c.Set(UserIDKey, claims.UserID)
         c.Next()
