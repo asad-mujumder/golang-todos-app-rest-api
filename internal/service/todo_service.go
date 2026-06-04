@@ -27,7 +27,7 @@ func NewTodoService(repo *repository.TodoRepository, log zerolog.Logger) *TodoSe
 	}
 }
 
-func (s *TodoService) List(ctx context.Context, req *model.ListTodosRequest) (*model.ListTodosResponse, error) {
+func (s *TodoService) List(ctx context.Context, userID uuid.UUID, req *model.ListTodosRequest) (*model.ListTodosResponse, error) {
 	if req.Page < 1 {
 		req.Page = 1
 	}
@@ -40,7 +40,7 @@ func (s *TodoService) List(ctx context.Context, req *model.ListTodosRequest) (*m
 
 	offset := (req.Page - 1) * req.Limit
 
-	todos, total, err := s.repo.List(ctx, req.Limit, offset)
+	todos, total, err := s.repo.List(ctx, userID, req.Limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("todo service: list: %w", err)
 	}
@@ -53,8 +53,8 @@ func (s *TodoService) List(ctx context.Context, req *model.ListTodosRequest) (*m
 	}, nil
 }
 
-func (s *TodoService) Create(ctx context.Context, newTodo *model.CreateTodoRequest) (*model.Todo, error) {
-	todo, err := s.repo.Create(ctx, newTodo.Title, newTodo.Completed)
+func (s *TodoService) Create(ctx context.Context, userID uuid.UUID, newTodo *model.CreateTodoRequest) (*model.Todo, error) {
+	todo, err := s.repo.Create(ctx, userID, newTodo.Title, newTodo.Completed)
 
 	if err != nil {
 		return nil, fmt.Errorf("todo service: create: %w", err)
@@ -63,8 +63,8 @@ func (s *TodoService) Create(ctx context.Context, newTodo *model.CreateTodoReque
 	return  todo, nil
 }
 
-func (s *TodoService) Get(ctx context.Context, id uuid.UUID) (*model.Todo, error) {
-	todo, err := s.repo.Get(ctx, id)
+func (s *TodoService) Get(ctx context.Context, userID, id uuid.UUID) (*model.Todo, error) {
+	todo, err := s.repo.Get(ctx, userID, id)
 
 	if err != nil {
 		return nil, fmt.Errorf("todo service: get: %w", err)
@@ -73,8 +73,8 @@ func (s *TodoService) Get(ctx context.Context, id uuid.UUID) (*model.Todo, error
 	return todo, nil
 }
 
-func (s *TodoService) Update(ctx context.Context, id uuid.UUID, req *model.UpdateTodoRequest) (*model.Todo, error) {
-	todo, err := s.repo.Update(ctx, id, req.Title, req.Completed)
+func (s *TodoService) Update(ctx context.Context, userID, id uuid.UUID, req *model.UpdateTodoRequest) (*model.Todo, error) {
+	todo, err := s.repo.Update(ctx, userID, id, req.Title, req.Completed)
 
 	if err != nil {
 		return nil, fmt.Errorf("todo service: update: %w", err)
@@ -83,8 +83,8 @@ func (s *TodoService) Update(ctx context.Context, id uuid.UUID, req *model.Updat
 	return todo, nil
 }
 
-func (s *TodoService) Delete(ctx context.Context, id uuid.UUID) (*uuid.UUID, error) {
-	deletedID, err := s.repo.Delete(ctx, id)
+func (s *TodoService) Delete(ctx context.Context, userID, id uuid.UUID) (*uuid.UUID, error) {
+	deletedID, err := s.repo.Delete(ctx, userID, id)
 
 	if err != nil {
 		return nil, fmt.Errorf("todo service: delete: %w", err)
